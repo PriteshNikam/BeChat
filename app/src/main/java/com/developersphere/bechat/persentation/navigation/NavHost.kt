@@ -27,7 +27,7 @@ sealed class Screen(val route: String) {
 fun AppNavHost(navHostController: NavHostController = rememberNavController()) {
     NavHost(
         navController = navHostController,
-        startDestination = Screen.HomeScreen
+        startDestination = Screen.BluetoothPermissionScreen
     ) {
 
         composable<Screen.HomeScreen> {
