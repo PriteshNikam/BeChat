@@ -11,6 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.developersphere.bechat.persentation.home_screen.HomeScreen
+import com.developersphere.bechat.persentation.navigation.AppNavHost
 import com.developersphere.bechat.ui.theme.BeChatTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,13 +21,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            BeChatTheme{
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            BeChatTheme {
+                AppNavHost()
             }
         }
     }
@@ -32,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Scaffold(Modifier.fillMaxSize()){ contentPadding ->
+    Scaffold(Modifier.fillMaxSize()) { contentPadding ->
         Text(
             text = "Hello $name!",
             modifier = modifier.padding(contentPadding)
@@ -43,15 +41,15 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    BeChatTheme{
+    BeChatTheme {
         Greeting("Android")
     }
 }
 
 @Preview
 @Composable
-fun GreetingDarkPreview(){
-    BeChatTheme(darkTheme = true){
+fun GreetingDarkPreview() {
+    BeChatTheme(darkTheme = true) {
         Greeting("Android")
     }
 }
