@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 // Primary & Accent
 val BluePrimary = Color(0xFF76A5D6)
 val BlueLight = Color(0xFF90CAF9)
-val BlueDark = Color(0xFF000000) // 0xFF1565C0
+val BlueDark = Color(0xFF1565C0)
 
 // Background & Surface
 val BackgroundLight = Color(0xFFF5F5F5)

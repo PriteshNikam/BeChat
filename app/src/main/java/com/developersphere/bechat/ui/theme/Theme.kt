@@ -49,7 +49,7 @@ val LightColorScheme = lightColorScheme(
     onSecondary = TextPrimary,
 
     error = ErrorRed,
-    onError = Color.White
+    onError = Color.White,
 )
 
 val DarkColorScheme = darkColorScheme(
