@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,161 +26,167 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstrainedLayoutReference
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.developersphere.bechat.R
+import com.developersphere.bechat.data.Message
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.ui.theme.BeChatTheme
-
-data class Message(val message: String, val msgId: Int, val isSentByUser: Boolean = true)
-
-val messageList = mutableListOf(
-    Message("last msg", 1, true),
-    Message("hello", 2, false),
-    Message("hello", 3, true),
-    Message("hello", 4, false),
-    Message("hello", 5, true),
-    Message("hello", 1, true),
-    Message("hello", 2, false),
-    Message("hello", 3, true),
-    Message("hello", 4, false),
-    Message("hello", 5, true),
-    Message("hello", 1, true),
-    Message("hello", 2, false),
-    Message("hello", 3, true),
-    Message("hello", 4, false),
-    Message("hello", 5, true),
-    Message("hello", 1, true),
-    Message("hello", 2, false),
-    Message("hello", 3, true),
-    Message("hello", 4, false),
-    Message("first msg", 5, true),
-)
+import com.developersphere.bechat.utils.DummyData.dummyMessages
 
 @Composable
 fun ChatScreen(navigation: (Screen?) -> Unit) {
     Scaffold(
         topBar = {
-            ChatScreenTopAppBar()
+            ChatScreenTopAppBar(navigation)
         },
         modifier = Modifier
             .fillMaxSize()
     ) { innerPadding ->
-        Messages(innerPadding)
-    }
-}
+        val messages = remember { dummyMessages }
+        val listState = rememberLazyListState()
+        var message by rememberSaveable { mutableStateOf("") }
 
-@Composable
-fun Messages(paddingValues: PaddingValues) {
-
-    var message by rememberSaveable { mutableStateOf("") }
-    val listState = rememberLazyListState()
-
-    ConstraintLayout(
-        modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()
-    ) {
-        val (list, sendMessage) = createRefs()
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .constrainAs(list) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(sendMessage.top)
-                    height = Dimension.fillToConstraints
-                },
-            state = listState,
-            reverseLayout = true,
-            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 8.dp),
-
-            ) {
-            items(messageList.count()) {
-                if (messageList[it].isSentByUser) {
-                    SentMessage(messageList[it].message)
-                } else {
-                    ReceivedMessage(messageList[it].message)
-                }
-            }
+        LaunchedEffect(messages.size) {
+            listState.scrollToItem(messages.lastIndex)
         }
-        Row(
+
+        ConstraintLayout(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-                .constrainAs(sendMessage) {
-                    bottom.linkTo(parent.bottom)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(innerPadding)
+                .fillMaxSize()
         ) {
-            TextField(
-                value = message,
-                onValueChange = { message = it },
-                modifier = Modifier.weight(1f),
+            val (messageList, messageInput) = createRefs()
+
+            // message list
+            MessageList(
+                messages = messages,
+                modifier = Modifier
+                    .constrainAs(messageList) {
+                        top.linkTo(parent.top)
+                        bottom.linkTo(messageInput.top)
+                        height = Dimension.fillToConstraints
+                    },
+                listState = listState,
             )
-            Spacer(Modifier.width(8.dp))
-            IconButton(
-                onClick = {},
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Default.Send,
-                    contentDescription = "send button"
-                )
-            }
+
+            // send msg text field and send icon.
+            MessageInputBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+                    .imePadding()
+                    .constrainAs(messageInput) {
+                        bottom.linkTo(parent.bottom)
+                    },
+                message = message,
+                onMessageTextUpdate = {
+                    message = it
+                },
+                onMessageSendClick = {
+                    if (message.isNotBlank()) {
+                        messages.add(
+                            Message(
+                                message = message,
+                                msgId = messages.size + 1,
+                                isSentByUser = true
+                            )
+                        )
+                        message = ""
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
-fun SendMessage(sendMessage: ConstrainedLayoutReference) {
-
+fun MessageList(
+    modifier: Modifier, listState: LazyListState,
+    messages: MutableList<Message>,
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
+        state = listState,
+        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 8.dp),
+    ) {
+        items(messages.count()) {
+            MessageBubble(messages[it].message, messages[it].isSentByUser)
+        }
+    }
 }
 
 @Composable
-fun SentMessage(message: String) {
+fun MessageInputBar(
+    modifier: Modifier, message: String,
+    onMessageTextUpdate: (message: String) -> Unit,
+    onMessageSendClick: () -> Unit,
+) {
     Row(
-        horizontalArrangement = Arrangement.End,
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        TextField(
+            value = message,
+            onValueChange = { onMessageTextUpdate(it) },
+            modifier = Modifier.weight(1f),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent,
+            )
+        )
+        Spacer(Modifier.width(8.dp))
+        IconButton(
+            onClick = {
+                onMessageSendClick()
+            },
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Default.Send,
+                contentDescription = "send button"
+            )
+        }
+    }
+}
+
+@Composable
+fun MessageBubble(message: String, isSentByUser: Boolean = true) {
+    Row(
+        horizontalArrangement = if (isSentByUser) Arrangement.End else Arrangement.Start,
         modifier = Modifier
             .fillMaxSize()
             .padding(end = 8.dp)
     ) {
         Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = RoundedCornerShape(12.dp, 12.dp, 0.dp, 12.dp),
-        ) {
-            Text(message, modifier = Modifier.padding(12.dp))
-        }
-    }
-}
-
-@Composable
-fun ReceivedMessage(message: String) {
-    Row(
-        horizontalArrangement = Arrangement.Start,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 8.dp)
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.primary,
-            shape = RoundedCornerShape(12.dp, 12.dp, 12.dp, 0.dp),
+            color = if (isSentByUser) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.primary,
+            shape = if (isSentByUser) RoundedCornerShape(
+                12.dp, 12.dp, 0.dp, 12.dp
+            ) else RoundedCornerShape(12.dp, 12.dp, 12.dp, 0.dp),
+            modifier = Modifier.widthIn(max = 250.dp)
         ) {
             Text(message, modifier = Modifier.padding(12.dp))
         }
@@ -186,7 +195,7 @@ fun ReceivedMessage(message: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreenTopAppBar() {
+fun ChatScreenTopAppBar(navigation: (Screen?) -> Unit) {
     TopAppBar(
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -205,7 +214,9 @@ fun ChatScreenTopAppBar() {
             )
         },
         navigationIcon = {
-            IconButton(onClick = {}) {
+            IconButton(onClick = {
+                navigation.invoke(null)
+            }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     contentDescription = "",
