@@ -13,3 +13,88 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+
+# ===========================
+# Android Studio / IntelliJ
+# ===========================
+.idea/
+*.iml
+*.iws
+
+# ===========================
+# Build & Gradle
+# ===========================
+/.gradle/
+/build/
+/*/build/
+/captures/
+.gradle/
+**/build/
+**/.gradle
+
+# ===========================
+# Kotlin/Java Compilation
+# ===========================
+*.class
+*.jar
+*.war
+*.ear
+
+# ===========================
+# Log files
+# ===========================
+*.log
+
+# ===========================
+# OS-specific
+# ===========================
+.DS_Store
+Thumbs.db
+
+# ===========================
+# Misc
+# ===========================
+*.keystore
+*.jks
+*.swp
+*.swo
+*.tmp
+
+# ===========================
+# Android NDK
+# ===========================
+obj/
+*.so
+
+# ===========================
+# Generated Files
+# ===========================
+/generated/
+output.json
+*.apk
+*.ap_
+*.aab
+
+# ===========================
+# Firebase / Crashlytics
+# ===========================
+crashlytics-build.properties
+firebase/
+
+# ===========================
+# Jetpack Compose Compiler Reports
+# ===========================
+.compose_metrics/
+.compose_compiler/
+
+# ===========================
+# IntelliJ Run Configurations (Optional)
+# ===========================
+.idea/runConfigurations/
+
+# ===========================
+# Local config override (Optional)
+# ===========================
+*.env
+.env.local

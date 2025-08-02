@@ -53,7 +53,7 @@ fun HomeScreen(navigate: (Screen) -> Unit) {
                 .padding(paddingValues = padding)
         ) {
             Column {
-                PairedDevices()
+                PairedDevices(navigate)
                 AvailableDevices()
             }
         }
@@ -61,7 +61,7 @@ fun HomeScreen(navigate: (Screen) -> Unit) {
 }
 
 @Composable
-fun PairedDevices() {
+fun PairedDevices(navigate: (Screen) -> Unit) {
     Box(Modifier.padding(16.dp)) {
         Column {
             Text(
@@ -79,6 +79,7 @@ fun PairedDevices() {
                             .padding(vertical = 8.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(12.dp),
+                        onClick = { navigate.invoke(Screen.ChatScreen) }
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,7 +121,7 @@ fun PairedDevices() {
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(34.dp),
 
-                            )
+                                )
                         }
                     }
                 }
