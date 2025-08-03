@@ -1,6 +1,6 @@
 [versions]
-agp = "8.9.1"
-kotlin = "2.0.21"
+agp = "8.9.3"
+kotlin = "2.1.0"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -8,16 +8,16 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
 composeBom = "2024.09.00"
-nav3Core = "1.0.0-alpha01"
-lifecycleViewmodelNav3 = "1.0.0-alpha01"
 kotlinSerialization = "2.1.21"
-
 compose-navigation = "2.9.2"
-
 kotlinxSerializationCore = "1.8.1"
-material3AdaptiveNav3 = "1.0.0-SNAPSHOT"
 constraintLayoutCompose = "1.1.1"
-constraintlayout = "2.2.1"
+# version 2.56.2 has issue as indian gov has banned the ministry of electronics in India
+# caused the Kotlin Gradle Plugin URLs of 1.9.24 to be blocked.
+# This causes the “this is blocked” HTML page to be downloaded as jar file as the blocking is not accompanied with an according HTTP status response,
+# which can then not be read by Gradle as jar file of course.
+hilt-android = "2.56.1"
+ksp = "2.0.21-1.0.27"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,16 +34,12 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-
 androidx-navigation = {group = "androidx.navigation", name = "navigation-compose" ,version.ref = "compose-navigation"}
-
 androidx-constraintlayout-compose = { group = "androidx.constraintlayout", name = "constraintlayout-compose" ,version.ref = "constraintLayoutCompose"}
-
-androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
-androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
-
-androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
+dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt-android" }
+dagger-hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt-android" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -51,3 +47,6 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization"}
+
+dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt-android" }
+devtools-ksp = {id = "com.google.devtools.ksp", version.ref = "ksp"}
