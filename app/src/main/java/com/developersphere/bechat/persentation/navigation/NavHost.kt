@@ -2,6 +2,8 @@ package com.developersphere.bechat.persentation.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -24,10 +26,16 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavHost(navHostController: NavHostController = rememberNavController()) {
+fun AppNavHost(
+    navHostController: NavHostController = rememberNavController(),
+    appViewModel: AppViewModel = hiltViewModel(),
+) {
+
+    val startingDestination = appViewModel.getStartingDestination.collectAsStateWithLifecycle()
+
     NavHost(
         navController = navHostController,
-        startDestination = Screen.BluetoothPermissionScreen
+        startDestination = startingDestination.value
     ) {
 
         composable<Screen.HomeScreen> {
@@ -37,10 +45,15 @@ fun AppNavHost(navHostController: NavHostController = rememberNavController()) {
         }
 
         composable<Screen.BluetoothPermissionScreen> {
-            BluetoothPermissionScreen { screen ->
-                Log.d("BeChat", "beScreen $screen")
-                navHostController.navigate(screen)
-            }
+            BluetoothPermissionScreen(
+                navigate = { screen ->
+                    navHostController.navigate(screen) {
+                        popUpTo(Screen.BluetoothPermissionScreen.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
 
         composable<Screen.ChatScreen> {
