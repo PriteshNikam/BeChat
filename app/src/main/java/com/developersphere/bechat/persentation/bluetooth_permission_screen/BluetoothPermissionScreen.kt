@@ -1,30 +1,84 @@
 package com.developersphere.bechat.persentation.bluetooth_permission_screen
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.util.Log
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.developersphere.bechat.R
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.ui.theme.BeChatTheme
 
 @Composable
-fun BluetoothPermissionScreen(navigate: (Screen) -> Unit) {
+fun BluetoothPermissionScreen(
+    navigate: (Screen) -> Unit,
+    bluetoothPermissionViewModel: BluetoothPermissionViewModel = hiltViewModel(),
+) {
+    val context = LocalContext.current
+
+    val navigateToHome = bluetoothPermissionViewModel.navigateToHome.collectAsStateWithLifecycle()
+
+    // Enable Bluetooth launcher
+    val enableBluetoothLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            navigate(Screen.HomeScreen)
+        }
+    }
+
+    // Permission request launcher
+    // required for android 12+
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
+        } else {
+            Toast.makeText(context, "Bluetooth permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(navigateToHome) {
+        if (navigateToHome.value) {
+            navigate.invoke(Screen.HomeScreen)
+        }
+        bluetoothPermissionViewModel.resetNavigationFlag()
+    }
+
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
@@ -65,11 +119,21 @@ fun BluetoothPermissionScreen(navigate: (Screen) -> Unit) {
                 .fillMaxWidth()
                 .padding(24.dp),
             shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
             onClick = {
-                navigate.invoke(Screen.HomeScreen)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.BLUETOOTH_CONNECT
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
+                    } else {
+                        bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                    }
+                } else {
+                    bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
+                }
             }) {
-            Log.d("BeChat", "Primary Color: ${MaterialTheme.colorScheme.primary}")
             Text(
                 modifier = Modifier.padding(8.dp),
                 text = "Enable Bluetooth",
@@ -78,6 +142,7 @@ fun BluetoothPermissionScreen(navigate: (Screen) -> Unit) {
         }
     }
 }
+
 
 @Preview
 @Composable
