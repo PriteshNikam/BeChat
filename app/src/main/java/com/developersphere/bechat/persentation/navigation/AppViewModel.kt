@@ -10,11 +10,11 @@ import javax.inject.Inject
 @HiltViewModel
 class AppViewModel @Inject constructor(bluetoothHelper: BluetoothHelper) : ViewModel() {
 
-    private val startingDestination = MutableStateFlow<Screen>(Screen.BluetoothPermissionScreen)
-    var getStartingDestination: StateFlow<Screen> = startingDestination
+    private val startingDestination = MutableStateFlow<Graph>(Graph.Permission)
+    var getStartingDestination: StateFlow<Graph> = startingDestination
 
     init {
         startingDestination.value =
-            if (bluetoothHelper.isBluetoothActive) Screen.HomeScreen else Screen.BluetoothPermissionScreen
+            if (bluetoothHelper.isBluetoothActive) Graph.Main else Graph.Permission
     }
 }

@@ -1,5 +1,6 @@
 package com.developersphere.bechat.persentation.chat_screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,11 +50,16 @@ import androidx.constraintlayout.compose.Dimension
 import com.developersphere.bechat.R
 import com.developersphere.bechat.data.Message
 import com.developersphere.bechat.persentation.navigation.Screen
+import com.developersphere.bechat.persentation.shared.SharedViewModel
 import com.developersphere.bechat.ui.theme.BeChatTheme
 import com.developersphere.bechat.utils.DummyData.dummyMessages
 
 @Composable
-fun ChatScreen(navigation: (Screen?) -> Unit) {
+fun ChatScreen(
+    navigation: (Screen?) -> Unit,
+    sharedViewModel: SharedViewModel,
+) {
+    Log.d("BeChat", "Ra1 ChatScreen VM -> $sharedViewModel")
     Scaffold(
         topBar = {
             ChatScreenTopAppBar(navigation)
@@ -242,7 +248,10 @@ fun ChatScreenTopAppBar(navigation: (Screen?) -> Unit) {
 @Composable
 fun ChatScreenPreview() {
     BeChatTheme {
-        ChatScreen({})
+        ChatScreen(
+            {},
+            sharedViewModel = TODO()
+        )
     }
 }
 
@@ -250,6 +259,9 @@ fun ChatScreenPreview() {
 @Composable
 fun ChatScreenDarkPreview() {
     BeChatTheme(darkTheme = true) {
-        ChatScreen({})
+        ChatScreen(
+            {},
+            sharedViewModel = TODO()
+        )
     }
 }
