@@ -1,5 +1,6 @@
 package com.developersphere.bechat.persentation.home_screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,10 +39,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.developersphere.bechat.persentation.navigation.Screen
+import com.developersphere.bechat.persentation.shared.SharedViewModel
 import com.developersphere.bechat.ui.theme.BeChatTheme
 
 @Composable
-fun HomeScreen(navigate: (Screen) -> Unit) {
+fun HomeScreen(
+    navigate: (Screen) -> Unit,
+    sharedViewModel: SharedViewModel,
+) {
+    Log.d("BeChat", "Ra1 HomeScreen VM -> $sharedViewModel")
+
     Scaffold(
         topBar = {
             HomeScreenTopAppBar()
@@ -247,7 +254,10 @@ fun HomeScreenTopAppBar() {
 @Composable
 fun HomeScreenPreviewDark() {
     BeChatTheme(darkTheme = true) {
-        HomeScreen({})
+        HomeScreen(
+            {},
+            sharedViewModel = TODO()
+        )
     }
 }
 
@@ -255,6 +265,9 @@ fun HomeScreenPreviewDark() {
 @Composable
 fun HomeScreenPreview() {
     BeChatTheme {
-        HomeScreen({})
+        HomeScreen(
+            {},
+            sharedViewModel = TODO()
+        )
     }
 }
