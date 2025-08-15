@@ -16,13 +16,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Screen(val route: String) {
     @Serializable
-    data object BluetoothPermissionScreen : Screen("BluetoothPermissionScreen")
+    data object BluetoothPermissionScreen : Screen(route =  "BluetoothPermissionScreen")
 
     @Serializable
-    data object HomeScreen : Screen("HomeScreen")
+    data object HomeScreen : Screen(route =  "HomeScreen")
 
     @Serializable
-    data object ChatScreen : Screen("ChatScreen")
+    data object ChatScreen : Screen(route = "ChatScreen")
 }
 
 @Composable
@@ -48,7 +48,7 @@ fun AppNavHost(
             BluetoothPermissionScreen(
                 navigate = { screen ->
                     navHostController.navigate(screen) {
-                        popUpTo(Screen.BluetoothPermissionScreen.route) {
+                        popUpTo(Screen.BluetoothPermissionScreen) {
                             inclusive = true
                         }
                     }
