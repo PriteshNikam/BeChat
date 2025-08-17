@@ -1,11 +1,12 @@
 package com.developersphere.bechat.persentation.bluetooth_permission_screen
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.pm.PackageManager
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -25,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,13 +35,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.developersphere.bechat.R
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.ui.theme.BeChatTheme
 
+@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothPermissionScreen(
     navigate: (Screen) -> Unit,
@@ -63,12 +63,16 @@ fun BluetoothPermissionScreen(
     // Permission request launcher
     // required for android 12+
     val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
-        } else {
-            Toast.makeText(context, "Bluetooth permission denied", Toast.LENGTH_SHORT).show()
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val canEnableBluetooth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            perms[Manifest.permission.BLUETOOTH_CONNECT] == true
+        } else true
+
+        if (canEnableBluetooth && !bluetoothPermissionViewModel.isBluetoothEnabled.value) {
+            enableBluetoothLauncher.launch(
+                Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            )
         }
     }
 
@@ -122,13 +126,17 @@ fun BluetoothPermissionScreen(
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (ContextCompat.checkSelfPermission(
-                            context, Manifest.permission.BLUETOOTH_CONNECT
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
+                    if (bluetoothPermissionViewModel.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
                         bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
                     } else {
-                        bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                        bluetoothPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.BLUETOOTH_CONNECT,
+                                Manifest.permission.BLUETOOTH_SCAN,
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+
+                            )
+                        )
                     }
                 } else {
                     bluetoothPermissionViewModel.enableBluetooth(enableBluetoothLauncher)
