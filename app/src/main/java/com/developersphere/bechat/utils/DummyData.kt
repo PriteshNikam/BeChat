@@ -1,7 +1,7 @@
 package com.developersphere.bechat.utils
 
 import androidx.compose.runtime.mutableStateListOf
-import com.developersphere.bechat.data.Message
+import com.developersphere.bechat.data.entity.Message
 
 object DummyData {
     val dummyMessages = mutableStateListOf(
