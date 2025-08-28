@@ -1,10 +1,12 @@
 package com.developersphere.bechat.persentation.home_screen
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,14 +21,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.developersphere.bechat.R
 import com.developersphere.bechat.domain.enums.BondState
 import com.developersphere.bechat.domain.models.Device
 import com.developersphere.bechat.persentation.navigation.Screen
@@ -58,34 +60,26 @@ fun HomeScreen(
     navigate: (Screen) -> Unit,
     sharedViewModel: SharedViewModel,
 ) {
-    val pairedDevices = sharedViewModel.pairedDevices.collectAsStateWithLifecycle()
-    val availableDevices = sharedViewModel.availableDevices.collectAsStateWithLifecycle()
-
-    Log.d("HomeScreen", "Ra1 pairedDevices :: ${pairedDevices.value}")
-    Log.d("HomeScreen", "Ra1 availableDevices :: ${availableDevices.value}")
+    val homeScreenUiState = sharedViewModel.bluetoothUiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    if (ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
-    ) {
-        if (sharedViewModel.isBluetoothEnable) {
-            sharedViewModel.getPairedDevices()
-            sharedViewModel.startDiscovering()
-        }
-    }
 
     LaunchedEffect(true) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                if (homeScreenUiState.value.isBluetoothEnable) {
+                    sharedViewModel.startDiscovering()
+                }
+            }
         }
     }
-
-
 
     Scaffold(
         topBar = {
-            HomeScreenTopAppBar()
+            HomeScreenTopAppBar(sharedViewModel)
         }
     ) { padding ->
         Box(
@@ -105,13 +99,19 @@ fun HomeScreen(
                         )
                     )
                 }
-                if (pairedDevices.value?.isNotEmpty() == true) {
-                    items(pairedDevices.value!!) { device ->
+                if (homeScreenUiState.value.pairedDevices?.isNotEmpty() == true) {
+                    items(homeScreenUiState.value.pairedDevices!!) { device ->
                         ListItem(device, navigate)
                     }
                 } else {
-                    item {
-                        NoDeviceFound()
+                    if (!homeScreenUiState.value.isDiscovering) {
+                        item {
+                            NoDeviceFound()
+                        }
+                    } else {
+                        item {
+                            Text("Scanning...")
+                        }
                     }
                 }
 
@@ -125,16 +125,16 @@ fun HomeScreen(
                     )
                 }
 
-                if (availableDevices.value?.isNotEmpty() == true) {
-                    items(availableDevices.value!!) { device ->
+                if (homeScreenUiState.value.availableDevices?.isNotEmpty() == true) {
+                    items(homeScreenUiState.value.availableDevices!!) { device ->
                         ListItem(device, navigate)
                     }
                 } else {
                     item {
                         NoDeviceFound()
                     }
-                    item{
-                        Button(onClick = {sharedViewModel.startDiscovering()}) {
+                    item {
+                        Button(onClick = { sharedViewModel.startDiscovering() }) {
                             Text("Scan")
                         }
                     }
@@ -225,9 +225,10 @@ fun ListItem(device: Device, navigate: (Screen) -> Unit) {
     }
 }
 
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenTopAppBar() {
+fun HomeScreenTopAppBar(sharedViewModel: SharedViewModel) {
     TopAppBar(
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -245,24 +246,33 @@ fun HomeScreenTopAppBar() {
                 )
             )
         },
-        navigationIcon = {
-            IconButton(onClick = {}) {
+
+        actions = {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                    painter = painterResource(id = R.drawable.detect),
                     contentDescription = "",
+                    Modifier
+                        .size(22.dp)
+                        .clickable {
+                            sharedViewModel.startDiscovering()
+                        },
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
-            }
-        },
-        actions = {
-            IconButton(
-                onClick = {}
-            ) {
+                Spacer(Modifier.width(12.dp))
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "",
+                    Modifier
+                        .size(22.dp)
+                        .clickable {
+                        },
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
+
             }
         }
     )
