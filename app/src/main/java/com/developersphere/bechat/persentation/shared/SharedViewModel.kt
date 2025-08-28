@@ -4,17 +4,16 @@ import android.Manifest
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.developersphere.bechat.domain.models.Device
+import com.developersphere.bechat.persentation.home_screen.HomeScreenUiState
 import com.developersphere.bechat.utils.BluetoothHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 //TODO
-// convert this into a state.
 // check is location necessary for discovering the device.
 // implement interface for bluetooth helper class.
 // add scan button on top app bar.
@@ -22,30 +21,42 @@ import javax.inject.Inject
 @HiltViewModel
 class SharedViewModel @Inject constructor(
     private val bluetoothHelper: BluetoothHelper,
-) :
-    ViewModel() {
-    private val _isBluetoothEnable = MutableStateFlow(bluetoothHelper.isBluetoothActive)
-    var isBluetoothEnable = _isBluetoothEnable.value
+) : ViewModel() {
 
-    private var _pairedDevices = MutableStateFlow<List<Device>?>(emptyList())
-    val pairedDevices: StateFlow<List<Device>?> = _pairedDevices
+    private val _bluetoothUiState = MutableStateFlow(HomeScreenUiState())
+    val bluetoothUiState: StateFlow<HomeScreenUiState> = _bluetoothUiState
 
-    private var _availableDevices = MutableStateFlow<List<Device>>(emptyList())
-    val availableDevices: StateFlow<List<Device>?> = _availableDevices
-
-
-    init{
+    init {
         viewModelScope.launch {
-            bluetoothHelper.scannedDevices.collect{
-                _availableDevices.value = it
+            bluetoothHelper.scannedDevices.collect { active ->
+                _bluetoothUiState.update { state ->
+                    state.copy(availableDevices = active)
+                }
             }
         }
-    }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    fun getPairedDevices() {
         viewModelScope.launch {
-            _pairedDevices.value = bluetoothHelper.getPairedDevices()
+            _bluetoothUiState.update { state ->
+                state.copy(
+                    pairedDevices = bluetoothHelper.getPairedDevices()
+                )
+            }
+        }
+
+        viewModelScope.launch {
+            bluetoothHelper.isBluetoothActive.collect { active ->
+                _bluetoothUiState.update { state ->
+                    state.copy(isBluetoothEnable = active)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            bluetoothHelper.isDiscovering.collect { active ->
+                _bluetoothUiState.update { state ->
+                    state.copy(isDiscovering = active)
+                }
+            }
         }
     }
 

@@ -16,8 +16,7 @@ import javax.inject.Inject
 class BluetoothPermissionViewModel @Inject constructor(val bluetoothHelper: BluetoothHelper) :
     ViewModel() {
 
-    private val _isBluetoothEnabled = MutableStateFlow(bluetoothHelper.isBluetoothActive)
-    val isBluetoothEnabled: StateFlow<Boolean> = _isBluetoothEnabled.asStateFlow()
+    val isBluetoothEnabled: StateFlow<Boolean> = bluetoothHelper.isBluetoothActive
 
     private val _navigateToHome = MutableStateFlow(false)
     val navigateToHome: StateFlow<Boolean> = _navigateToHome.asStateFlow()

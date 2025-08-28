@@ -18,6 +18,7 @@ import com.developersphere.bechat.domain.enums.BondState
 import com.developersphere.bechat.domain.models.Device
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
@@ -27,16 +28,23 @@ class BluetoothHelper @Inject constructor(@ApplicationContext private val contex
     val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
     private val _isBluetoothActive = MutableStateFlow(bluetoothAdapter?.isEnabled == true)
-    var isBluetoothActive = _isBluetoothActive.value
+    var isBluetoothActive: StateFlow<Boolean> = _isBluetoothActive
     private var onBluetoothEnabledCallback: (() -> Unit)? = null
+
+    private val _isDiscovering = MutableStateFlow(bluetoothAdapter?.isDiscovering == true)
+    var isDiscovering: StateFlow<Boolean> = _isDiscovering
 
     private var _scannedDevices = MutableStateFlow<List<Device>>(emptyList())
     val scannedDevices = _scannedDevices
 
     private var receiver: BluetoothReceiver? = BluetoothReceiver { device ->
         _scannedDevices.update { devices ->
-            val newDevice = Device(name = device.name, address = device.address)
-            if (newDevice in devices) devices else devices + newDevice
+            val newDevice = Device(name = device.name ?: "Unknown device", address = device.address)
+            (if (devices.any { it.address == newDevice.address }) {
+                devices
+            } else {
+                devices + newDevice
+            })
         }
     }
 

@@ -15,6 +15,6 @@ class AppViewModel @Inject constructor(bluetoothHelper: BluetoothHelper) : ViewM
 
     init {
         startingDestination.value =
-            if (bluetoothHelper.isBluetoothActive) Graph.Main else Graph.Permission
+            if (bluetoothHelper.isBluetoothActive.value) Graph.Main else Graph.Permission
     }
 }
