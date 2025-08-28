@@ -2,7 +2,6 @@ package com.developersphere.bechat.persentation.bluetooth_permission_screen
 
 import android.Manifest
 import android.content.Intent
-import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
@@ -17,6 +16,8 @@ import javax.inject.Inject
 class BluetoothPermissionViewModel @Inject constructor(val bluetoothHelper: BluetoothHelper) :
     ViewModel() {
 
+    val isBluetoothEnabled: StateFlow<Boolean> = bluetoothHelper.isBluetoothActive
+
     private val _navigateToHome = MutableStateFlow(false)
     val navigateToHome: StateFlow<Boolean> = _navigateToHome.asStateFlow()
 
@@ -29,5 +30,9 @@ class BluetoothPermissionViewModel @Inject constructor(val bluetoothHelper: Blue
 
     fun resetNavigationFlag() {
         _navigateToHome.value = false
+    }
+
+    fun hasPermission(permission:String):Boolean{
+        return bluetoothHelper.hasPermission(permission)
     }
 }

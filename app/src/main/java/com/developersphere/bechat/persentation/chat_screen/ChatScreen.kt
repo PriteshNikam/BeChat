@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.developersphere.bechat.R
-import com.developersphere.bechat.data.Message
+import com.developersphere.bechat.data.entity.Message
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.persentation.shared.SharedViewModel
 import com.developersphere.bechat.ui.theme.BeChatTheme
