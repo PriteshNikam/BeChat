@@ -1,7 +1,7 @@
 package com.developersphere.bechat.persentation.navigation
 
 import androidx.lifecycle.ViewModel
-import com.developersphere.bechat.utils.BluetoothHelper
+import com.developersphere.bechat.domain.bluetooth.BluetoothHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
