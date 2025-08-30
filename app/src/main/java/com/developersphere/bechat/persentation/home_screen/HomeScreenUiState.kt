@@ -1,10 +1,16 @@
 package com.developersphere.bechat.persentation.home_screen
 
-import com.developersphere.bechat.domain.models.Device
+import android.bluetooth.BluetoothDevice
 
 data class HomeScreenUiState(
     var isBluetoothEnable: Boolean = false,
-    var pairedDevices: List<Device>? = emptyList<Device>(),
-    var availableDevices: List<Device>? = emptyList<Device>(),
+    var pairedDevices: List<BluetoothDevice>? = emptyList<BluetoothDevice>(),
+    var availableDevices: List<BluetoothDevice>? = emptyList<BluetoothDevice>(),
     var isDiscovering: Boolean = false,
+    val connectedDevice: BluetoothDevice? = null,   // currently connected device
+    val chatMessages: List<String> = emptyList(), // chat history
+    var isServer: Boolean = false,      // role (server/client)
+    var isConnected: Boolean = false,
+    var isConnecting: Boolean = false,
+    var errorMessage: String? = null,
 )

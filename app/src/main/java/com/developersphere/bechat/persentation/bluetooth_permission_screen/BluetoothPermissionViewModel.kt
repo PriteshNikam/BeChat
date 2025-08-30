@@ -5,7 +5,7 @@ import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
-import com.developersphere.bechat.utils.BluetoothHelper
+import com.developersphere.bechat.domain.bluetooth.BluetoothHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
