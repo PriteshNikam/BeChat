@@ -1,15 +1,16 @@
 package com.developersphere.bechat.persentation.home_screen
 
 import android.Manifest
+import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,12 +25,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.developersphere.bechat.persentation.home_screen.widget.HomeScreenTopAppBar
 import com.developersphere.bechat.persentation.home_screen.widget.ListItem
 import com.developersphere.bechat.persentation.home_screen.widget.NoDeviceFound
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.persentation.shared.SharedViewModel
-import com.developersphere.bechat.ui.theme.BeChatTheme
 
 @Composable
 fun HomeScreen(
@@ -39,7 +40,8 @@ fun HomeScreen(
     val homeScreenUiState = sharedViewModel.bluetoothUiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(true) {
+    // launch effect true/Unit means it is only triggered once.
+    LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(
                     context,
@@ -56,8 +58,15 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             HomeScreenTopAppBar(
+                isDiscovering = homeScreenUiState.value.isDiscovering,
                 scanDevice = {
-                    sharedViewModel.startDiscovering()
+                    if (homeScreenUiState.value.isBluetoothEnable) {
+                        if (homeScreenUiState.value.isDiscovering) {
+                            sharedViewModel.stopDiscovering()
+                        } else {
+                            sharedViewModel.startDiscovering()
+                        }
+                    }
                 },
                 enableServer = {
                     sharedViewModel.waitingForIncomingConnection()
@@ -71,6 +80,11 @@ fun HomeScreen(
                 Box(Modifier.fillMaxSize()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
+            }
+
+            homeScreenUiState.value.isConnected -> {
+                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+                navigate(Screen.ChatScreen)
             }
 
             else -> {
@@ -94,19 +108,18 @@ fun HomeScreen(
                         if (homeScreenUiState.value.pairedDevices?.isNotEmpty() == true) {
                             items(homeScreenUiState.value.pairedDevices!!) { device ->
                                 ListItem(device, connectDevice = {
-                                    sharedViewModel.connectDevice(it)
-                                    //navigate(Screen.ChatScreen)
+                                    if (device.bondState != BluetoothDevice.BOND_BONDED || !homeScreenUiState.value.isConnected) {
+                                        sharedViewModel.connectDevice(it)
+                                    }
+
+                                    if (homeScreenUiState.value.isConnected) {
+                                        navigate(Screen.ChatScreen)
+                                    }
                                 })
                             }
                         } else {
-                            if (!homeScreenUiState.value.isDiscovering) {
-                                item {
-                                    NoDeviceFound()
-                                }
-                            } else {
-                                item {
-                                    Text("Scanning...")
-                                }
+                            item {
+                                NoDeviceFound()
                             }
                         }
 
@@ -126,10 +139,6 @@ fun HomeScreen(
                                     device,
                                     connectDevice = {
                                         sharedViewModel.connectDevice(device)
-                                        Log.d("BLE", "Ra1 connected")
-//                                if (connected) {
-//                                    navigate(Screen.ChatScreen)
-//                                }
                                     }
                                 )
                             }
@@ -137,9 +146,9 @@ fun HomeScreen(
                             item {
                                 NoDeviceFound()
                             }
-                            item {
-                                Button(onClick = { sharedViewModel.startDiscovering() }) {
-                                    Text("Scan")
+                            if (homeScreenUiState.value.isDiscovering) {
+                                item {
+                                    Text("Scanning...")
                                 }
                             }
                         }
@@ -150,24 +159,21 @@ fun HomeScreen(
     }
 }
 
-@Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun HomeScreenPreviewDark() {
-    BeChatTheme(darkTheme = true) {
-        HomeScreen(
-            {},
-            sharedViewModel = TODO()
-        )
-    }
+    HomeScreen(
+        {},
+        sharedViewModel = hiltViewModel()
+    )
 }
 
 @Preview
 @Composable
 fun HomeScreenPreview() {
-    BeChatTheme {
-        HomeScreen(
-            {},
-            sharedViewModel = TODO()
-        )
-    }
+    HomeScreen(
+        {},
+        sharedViewModel = hiltViewModel()
+    )
+
 }
