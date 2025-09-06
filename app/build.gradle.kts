@@ -71,4 +71,7 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     ksp(libs.dagger.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // lottie
+    implementation(libs.lottie.compose)
 }
