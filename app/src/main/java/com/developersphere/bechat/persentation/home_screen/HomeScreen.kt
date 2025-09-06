@@ -6,17 +6,20 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.developersphere.bechat.R
 import com.developersphere.bechat.persentation.home_screen.widget.HomeScreenTopAppBar
 import com.developersphere.bechat.persentation.home_screen.widget.ListItem
 import com.developersphere.bechat.persentation.home_screen.widget.NoDeviceFound
@@ -76,8 +84,22 @@ fun HomeScreen(
         }) { padding ->
         when {
             homeScreenUiState.value.isConnecting -> {
-                Box(Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                val composition by rememberLottieComposition(
+                    spec = LottieCompositionSpec.RawRes(
+                        R.raw.loading_lottie
+                    )
+                )
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LottieAnimation(
+                        modifier = Modifier.height(200.dp),
+                        composition = composition,
+                        iterations = LottieConstants.IterateForever
+                    )
+                    Text("Server hosted", style = TextStyle(fontSize = 20.sp))
                 }
             }
 
