@@ -39,7 +39,7 @@ fun ListItem(
     val bondState = when (device.bondState) {
         BluetoothDevice.BOND_BONDED -> BondState.PAIRED.name
         BluetoothDevice.BOND_BONDING -> BondState.CONNECTING.name
-        BluetoothDevice.BOND_NONE-> BondState.UNPAIRED.name
+        BluetoothDevice.BOND_NONE -> BondState.UNPAIRED.name
         BluetoothDevice.DEVICE_TYPE_UNKNOWN -> BondState.UNKNOWN.name
         else -> BondState.UNKNOWN.name
     }

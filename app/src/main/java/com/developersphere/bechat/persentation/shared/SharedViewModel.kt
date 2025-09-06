@@ -2,10 +2,11 @@ package com.developersphere.bechat.persentation.shared
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.developersphere.bechat.domain.bluetooth.BluetoothHelper
+import com.developersphere.bechat.data.bluetooth.BluetoothControllerImpl
 import com.developersphere.bechat.domain.bluetooth.ConnectionResult
 import com.developersphere.bechat.persentation.home_screen.HomeScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
-    private val bluetoothHelper: BluetoothHelper,
+    private val bluetoothControllerImpl: BluetoothControllerImpl,
 ) : ViewModel() {
 
     private val _bluetoothUiState = MutableStateFlow(HomeScreenUiState())
@@ -36,13 +37,13 @@ class SharedViewModel @Inject constructor(
     private var deviceConnectJob: Job? = null
 
     init {
-        bluetoothHelper.isConnected.onEach { isConnected ->
+        bluetoothControllerImpl.isConnected.onEach { isConnected ->
             _bluetoothUiState.update { state ->
                 state.copy(isConnected = isConnected)
             }
         }.launchIn(viewModelScope)
 
-        bluetoothHelper.error.onEach { error ->
+        bluetoothControllerImpl.error.onEach { error ->
             _bluetoothUiState.update { state ->
                 state.copy(errorMessage = error)
             }
@@ -50,7 +51,7 @@ class SharedViewModel @Inject constructor(
 
         // collected available devices.
         viewModelScope.launch {
-            bluetoothHelper.scannedDevices.collect { active ->
+            bluetoothControllerImpl.scannedDevices.collect { active ->
                 _bluetoothUiState.update { state ->
                     state.copy(availableDevices = active)
                 }
@@ -61,14 +62,14 @@ class SharedViewModel @Inject constructor(
         viewModelScope.launch {
             _bluetoothUiState.update { state ->
                 state.copy(
-                    pairedDevices = bluetoothHelper.getPairedDevices()
+                    pairedDevices = bluetoothControllerImpl.getPairedDevices()
                 )
             }
         }
 
         // collected bluetooth status
         viewModelScope.launch {
-            bluetoothHelper.isBluetoothActive.collect { active ->
+            bluetoothControllerImpl.isBluetoothActive.collect { active ->
                 _bluetoothUiState.update { state ->
                     state.copy(isBluetoothEnable = active)
                 }
@@ -77,18 +78,9 @@ class SharedViewModel @Inject constructor(
 
         // collected bluetooth discovering status
         viewModelScope.launch {
-            bluetoothHelper.isDiscovering.collect { active ->
+            bluetoothControllerImpl.isDiscovering.collect { active ->
                 _bluetoothUiState.update { state ->
                     state.copy(isDiscovering = active)
-                }
-            }
-        }
-
-        // Collect incoming chat messages
-        viewModelScope.launch {
-            bluetoothHelper.incomingMessages.collect { message ->
-                _bluetoothUiState.update { state ->
-                    state.copy(chatMessages = state.chatMessages + message)
                 }
             }
         }
@@ -97,7 +89,15 @@ class SharedViewModel @Inject constructor(
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun startDiscovering() {
         viewModelScope.launch {
-            bluetoothHelper.startDiscovering()
+            Log.d("Bechat", "Ra1 VM startDiscovering")
+            bluetoothControllerImpl.startDiscovering()
+        }
+    }
+
+    fun stopDiscovering() {
+        viewModelScope.launch {
+            Log.d("Bechat", "Ra1 VM stopDiscovering")
+            bluetoothControllerImpl.stopDiscovering()
         }
     }
 
@@ -106,19 +106,34 @@ class SharedViewModel @Inject constructor(
             _bluetoothUiState.update { state ->
                 state.copy(isConnecting = true)
             }
-            deviceConnectJob = bluetoothHelper.connectDevice(device).listen()
+            deviceConnectJob = bluetoothControllerImpl.connectDevice(device).listen()
         }
     }
 
     fun disConnectDevice() {
         viewModelScope.launch {
             deviceConnectJob?.cancel()
-            bluetoothHelper.closeConnection()
+            bluetoothControllerImpl.closeConnection()
             _bluetoothUiState.update { state ->
                 state.copy(
                     isConnected = false,
                     isConnecting = false,
                 )
+            }
+        }
+    }
+
+    fun sendMessage(message: String) {
+        Log.d("Bechat","Ra1 VM msg -> $message")
+        viewModelScope.launch {
+            var bluetoothMessage = bluetoothControllerImpl.sendMessage(message)
+            Log.d("Bechat","Ra1 VM return msg -> $bluetoothMessage")
+            bluetoothMessage?.let {
+                _bluetoothUiState.update { state ->
+                    state.copy(
+                        chatMessages = state.chatMessages + it
+                    )
+                }
             }
         }
     }
@@ -130,7 +145,7 @@ class SharedViewModel @Inject constructor(
                     isConnecting = true,
                 )
             }
-            deviceConnectJob = bluetoothHelper.startServer().listen()
+            deviceConnectJob = bluetoothControllerImpl.startServer().listen()
         }
     }
 
@@ -157,9 +172,21 @@ class SharedViewModel @Inject constructor(
                         )
                     }
                 }
+
+                is ConnectionResult.ConnectionLost -> {
+                    // todo:: connection list state.
+                }
+
+                is ConnectionResult.DataTransferredSuccessFully -> {
+                    _bluetoothUiState.update { state ->
+                        state.copy(
+                            chatMessages = state.chatMessages + result.message,
+                        )
+                    }
+                }
             }
         }.catch { throwable ->
-            bluetoothHelper.closeConnection()
+            bluetoothControllerImpl.closeConnection()
             _bluetoothUiState.update { state ->
                 state.copy(
                     isConnected = false,
@@ -171,6 +198,6 @@ class SharedViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        bluetoothHelper.release()
+        bluetoothControllerImpl.release()
     }
 }

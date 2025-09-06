@@ -1,15 +1,17 @@
+package com.developersphere.bechat.data.receiver
+
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.Parcelable
 import android.util.Log
+import com.developersphere.bechat.utils.getParcelableCompat
 
 class FoundDeviceReceiver(
     private val onDeviceFound: (BluetoothDevice) -> Unit,
+    private val onStatusChanged: (Boolean) -> Unit
 ) : BroadcastReceiver() {
 
     @SuppressLint("MissingPermission")
@@ -25,25 +27,16 @@ class FoundDeviceReceiver(
                 }
             }
 
+            BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+                Log.d("BluetoothReceiver", "ACTION_DISCOVERY_STARTED")
+                onStatusChanged(true)
+            }
+
             BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                 Log.d("BluetoothReceiver", "ACTION_DISCOVERY_FINISHED")
+                onStatusChanged(false)
             }
-        }
-    }
-}
 
-// make this common for all broadcast receiver.
-@Suppress("DEPRECATION")
-fun <T : Parcelable> Intent.getParcelableCompat(key: String, clazz: Class<T>): T? {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        getParcelableExtra(key, clazz)
-    } else {
-        val value = getParcelableExtra(key) as? T
-        if (clazz.isInstance(value)) {
-            @Suppress("UNCHECKED_CAST")
-            value as T
-        } else {
-            null
         }
     }
 }
