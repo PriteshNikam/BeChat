@@ -11,13 +11,7 @@ import com.developersphere.bechat.domain.bluetooth.ConnectionResult
 import com.developersphere.bechat.persentation.home_screen.HomeScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -124,10 +118,10 @@ class SharedViewModel @Inject constructor(
     }
 
     fun sendMessage(message: String) {
-        Log.d("Bechat","Ra1 VM msg -> $message")
+        Log.d("Bechat", "Ra1 VM msg -> $message")
         viewModelScope.launch {
             var bluetoothMessage = bluetoothControllerImpl.sendMessage(message)
-            Log.d("Bechat","Ra1 VM return msg -> $bluetoothMessage")
+            Log.d("Bechat", "Ra1 VM return msg -> $bluetoothMessage")
             bluetoothMessage?.let {
                 _bluetoothUiState.update { state ->
                     state.copy(
@@ -146,6 +140,19 @@ class SharedViewModel @Inject constructor(
                 )
             }
             deviceConnectJob = bluetoothControllerImpl.startServer().listen()
+        }
+    }
+
+    fun stopServer() {
+        Log.d("Bechat", "Ra1 VM stopServer")
+        viewModelScope.launch {
+            deviceConnectJob?.cancel()
+            bluetoothControllerImpl.stopServer()
+            _bluetoothUiState.update { state ->
+                state.copy(
+                    isConnecting = false
+                )
+            }
         }
     }
 
@@ -175,6 +182,7 @@ class SharedViewModel @Inject constructor(
 
                 is ConnectionResult.ConnectionLost -> {
                     // todo:: connection list state.
+                    Log.d("BeChat", "Ra1 shared viewModel connection list")
                 }
 
                 is ConnectionResult.DataTransferredSuccessFully -> {
