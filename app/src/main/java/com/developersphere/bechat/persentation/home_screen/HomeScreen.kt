@@ -44,8 +44,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    context, Manifest.permission.BLUETOOTH_CONNECT
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 if (homeScreenUiState.value.isBluetoothEnable) {
@@ -59,22 +58,22 @@ fun HomeScreen(
         topBar = {
             HomeScreenTopAppBar(
                 isDiscovering = homeScreenUiState.value.isDiscovering,
-                scanDevice = {
+                isServerEnabled = homeScreenUiState.value.isConnecting,
+                togglerDeviceScan = {
                     if (homeScreenUiState.value.isBluetoothEnable) {
-                        if (homeScreenUiState.value.isDiscovering) {
+                        if (homeScreenUiState.value.isDiscovering)
                             sharedViewModel.stopDiscovering()
-                        } else {
-                            sharedViewModel.startDiscovering()
-                        }
+                        else sharedViewModel.startDiscovering()
                     }
                 },
-                enableServer = {
-                    sharedViewModel.waitingForIncomingConnection()
-                }
-
-            )
-        }
-    ) { padding ->
+                toggleServer = {
+                    if (homeScreenUiState.value.isConnecting) {
+                        sharedViewModel.stopServer()
+                    } else {
+                        sharedViewModel.waitingForIncomingConnection()
+                    }
+                })
+        }) { padding ->
         when {
             homeScreenUiState.value.isConnecting -> {
                 Box(Modifier.fillMaxSize()) {
@@ -136,11 +135,9 @@ fun HomeScreen(
                         if (homeScreenUiState.value.availableDevices?.isNotEmpty() == true) {
                             items(homeScreenUiState.value.availableDevices!!) { device ->
                                 ListItem(
-                                    device,
-                                    connectDevice = {
+                                    device, connectDevice = {
                                         sharedViewModel.connectDevice(device)
-                                    }
-                                )
+                                    })
                             }
                         } else {
                             item {
@@ -163,8 +160,7 @@ fun HomeScreen(
 @Composable
 fun HomeScreenPreviewDark() {
     HomeScreen(
-        {},
-        sharedViewModel = hiltViewModel()
+        {}, sharedViewModel = hiltViewModel()
     )
 }
 
@@ -172,8 +168,7 @@ fun HomeScreenPreviewDark() {
 @Composable
 fun HomeScreenPreview() {
     HomeScreen(
-        {},
-        sharedViewModel = hiltViewModel()
+        {}, sharedViewModel = hiltViewModel()
     )
 
 }

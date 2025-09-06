@@ -247,9 +247,18 @@ class BluetoothControllerImpl @Inject constructor(
                     emitAll(service.listenForMessages())
                 }
             }
-        }.onCompletion {
+        }.onCompletion { cause ->
+            if (cause == null) {
+                emit(ConnectionResult.ConnectionLost("Server stopped"))
+            } else {
+                emit(ConnectionResult.Error("Server stopped with error: ${cause.message}"))
+            }
             closeConnection()
         }.flowOn(Dispatchers.IO)
+    }
+
+    override fun stopServer() {
+        closeConnection()
     }
 
     override fun connectDevice(device: BluetoothDevice): Flow<ConnectionResult> {
@@ -292,10 +301,19 @@ class BluetoothControllerImpl @Inject constructor(
     }
 
     override fun closeConnection() {
-        serverSocket?.close()
-        clientSocket?.close()
-        serverSocket = null
+        try {
+            clientSocket?.close()
+        } catch (_: Exception) {
+            Log.d("BeChat", "Ra1 close connection exception")
+        }
+        try {
+            serverSocket?.close()
+        } catch (_: Exception) {
+            Log.d("BeChat", "Ra1 close server socket exception")
+        }
         clientSocket = null
+        serverSocket = null
+        bluetoothDataTransferService = null
     }
 
     override fun release() {

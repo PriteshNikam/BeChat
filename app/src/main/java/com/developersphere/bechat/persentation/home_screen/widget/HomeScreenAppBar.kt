@@ -32,7 +32,12 @@ import com.developersphere.bechat.ui.theme.BeChatTheme
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenTopAppBar(isDiscovering: Boolean, scanDevice: () -> Unit, enableServer: () -> Unit) {
+fun HomeScreenTopAppBar(
+    isServerEnabled: Boolean,
+    isDiscovering: Boolean,
+    togglerDeviceScan: () -> Unit,
+    toggleServer: () -> Unit,
+) {
     TopAppBar(
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -56,14 +61,15 @@ fun HomeScreenTopAppBar(isDiscovering: Boolean, scanDevice: () -> Unit, enableSe
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Icon(
-                    painter = painterResource(R.drawable.server),
-                    contentDescription = "",
+                    painter = if (isServerEnabled) painterResource(R.drawable.stop_server)
+                    else
+                        painterResource(R.drawable.server),
+                    contentDescription = "Server",
                     Modifier
                         .size(22.dp)
                         .clickable {
-                            enableServer()
+                            toggleServer()
                         },
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
@@ -81,7 +87,7 @@ fun HomeScreenTopAppBar(isDiscovering: Boolean, scanDevice: () -> Unit, enableSe
                         .width(40.dp)
                         .align(Alignment.CenterVertically)
                         .clickable {
-                            scanDevice()
+                            togglerDeviceScan()
                         },
                 )
 
@@ -105,7 +111,7 @@ fun HomeScreenTopAppBar(isDiscovering: Boolean, scanDevice: () -> Unit, enableSe
 @Preview
 fun HomeScreenTopAppBarPreview() {
     BeChatTheme {
-        HomeScreenTopAppBar(true, {}, {})
+        HomeScreenTopAppBar(true, true, {}, {})
     }
 }
 
@@ -113,7 +119,7 @@ fun HomeScreenTopAppBarPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 fun HomeScreenTopAppBarDarkPreview() {
     BeChatTheme {
-        HomeScreenTopAppBar(false, {}, {})
+        HomeScreenTopAppBar(false, false, {}, {})
     }
 }
 
