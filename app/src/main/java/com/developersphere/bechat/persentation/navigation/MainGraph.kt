@@ -6,7 +6,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.developersphere.bechat.persentation.about_screen.AboutScreen
 import com.developersphere.bechat.persentation.chat_screen.ChatScreen
+import com.developersphere.bechat.persentation.connection_guide_screen.ConnectionGuideScreen
 import com.developersphere.bechat.persentation.home_screen.HomeScreen
 import com.developersphere.bechat.persentation.shared.SharedViewModel
 
@@ -20,6 +22,14 @@ fun NavGraphBuilder.mainGraph(navHostController: NavHostController) {
 
         composable<Screen.ChatScreen> { backStack ->
             RegisterChatScreen(navHostController, backStack)
+        }
+
+        composable<Screen.ConnectionGuideScreen> {
+            RegisterConnectionGuideScreen(navHostController)
+        }
+
+        composable<Screen.AboutScreen> {
+            RegisterAboutScreen(navHostController)
         }
     }
 }
@@ -63,5 +73,23 @@ fun RegisterChatScreen(
             }
         },
         sharedViewModel = viewModel,
+    )
+}
+
+@Composable
+fun RegisterConnectionGuideScreen(navHostController: NavHostController) {
+    ConnectionGuideScreen(
+        navigation = {
+            navHostController.popBackStack()
+        }
+    )
+}
+
+@Composable
+fun RegisterAboutScreen(navHostController: NavHostController) {
+    AboutScreen(
+        navigation = {
+            navHostController.popBackStack()
+        }
     )
 }
