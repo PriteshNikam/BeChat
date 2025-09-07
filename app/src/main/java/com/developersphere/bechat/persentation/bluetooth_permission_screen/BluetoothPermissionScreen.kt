@@ -9,34 +9,26 @@ import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.*
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.developersphere.bechat.R
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.ui.theme.BeChatTheme
@@ -47,8 +39,6 @@ fun BluetoothPermissionScreen(
     navigate: (Screen) -> Unit,
     bluetoothPermissionViewModel: BluetoothPermissionViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-
     val navigateToHome = bluetoothPermissionViewModel.navigateToHome.collectAsStateWithLifecycle()
 
     // Enable Bluetooth launcher
@@ -76,6 +66,12 @@ fun BluetoothPermissionScreen(
         }
     }
 
+    val composition by rememberLottieComposition(
+        spec = LottieCompositionSpec.RawRes(
+            R.raw.bluetooth_lottie,
+        ),
+    )
+
     LaunchedEffect(navigateToHome) {
         if (navigateToHome.value) {
             navigate.invoke(Screen.HomeScreen)
@@ -93,13 +89,21 @@ fun BluetoothPermissionScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                modifier = Modifier.size(
-                    250.dp
-                ),
-                painter = painterResource(R.drawable.bluetooth_logo),
-                contentDescription = ""
+
+//            Image(
+//                modifier = Modifier.size(
+//                    250.dp
+//                ),
+//                painter = painterResource(R.drawable.bluetooth_logo),
+//                contentDescription = ""
+//            )
+
+            LottieAnimation(
+                composition = composition,
+                modifier = Modifier.size(250.dp),
+                iterations = LottieConstants.IterateForever,
             )
+            Spacer(modifier = Modifier.height(44.dp))
             Text(
                 "Bluetooth is Off", fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -135,7 +139,7 @@ fun BluetoothPermissionScreen(
                                 Manifest.permission.BLUETOOTH_SCAN,
                                 Manifest.permission.ACCESS_FINE_LOCATION,
 
-                            )
+                                )
                         )
                     }
                 } else {

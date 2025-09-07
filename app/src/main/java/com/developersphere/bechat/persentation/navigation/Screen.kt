@@ -12,4 +12,10 @@ sealed class Screen(val route: String) {
 
     @Serializable
     data object ChatScreen : Screen(route = "ChatScreen")
+
+    @Serializable
+    data object ConnectionGuideScreen : Screen(route = "ConnectionGuideScreen")
+
+    @Serializable
+    data object AboutScreen : Screen(route = "AboutScreen")
 }

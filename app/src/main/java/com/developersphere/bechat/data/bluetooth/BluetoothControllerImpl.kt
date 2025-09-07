@@ -1,15 +1,10 @@
-package com.developersphere.bechat.domain.bluetooth
+package com.developersphere.bechat.data.bluetooth
 
-import ConnectionStateReceiver
-import FoundDeviceReceiver
+import com.developersphere.bechat.data.receiver.ConnectionStateReceiver
+import com.developersphere.bechat.data.receiver.FoundDeviceReceiver
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothClass
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothServerSocket
-import android.bluetooth.BluetoothSocket
+import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -17,30 +12,25 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.ContextCompat
+import com.developersphere.bechat.data.receiver.ScanningStatusReceiver
+import com.developersphere.bechat.data.service.BluetoothDataService
+import com.developersphere.bechat.data.toByteArray
+import com.developersphere.bechat.domain.bluetooth.BluetoothController
+import com.developersphere.bechat.domain.bluetooth.ConnectionResult
+import com.developersphere.bechat.domain.models.Message
+import com.developersphere.bechat.domain.models.MessageStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import java.io.IOException
 import java.io.OutputStream
 import java.util.UUID
 import javax.inject.Inject
-
+import kotlin.random.Random
 
 // create interface for this helper class.
 @SuppressLint("MissingPermission")
-class BluetoothHelper @Inject constructor(
+class BluetoothControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : BluetoothController {
 
@@ -57,7 +47,9 @@ class BluetoothHelper @Inject constructor(
     private var onBluetoothEnabledCallback: (() -> Unit)? = null
 
     private val _isDiscovering = MutableStateFlow(bluetoothAdapter?.isDiscovering == true)
-    var isDiscovering: StateFlow<Boolean> = _isDiscovering
+    override var isDiscovering: StateFlow<Boolean> = _isDiscovering
+
+    private var bluetoothDataTransferService: BluetoothDataService? = null
 
     private var _isBluetoothActive = MutableStateFlow(bluetoothAdapter?.isEnabled == true)
     override val isBluetoothActive: StateFlow<Boolean>
@@ -75,10 +67,6 @@ class BluetoothHelper @Inject constructor(
     override val error: SharedFlow<String>
         get() = _error.asSharedFlow()
 
-    private val _incomingMessages = MutableSharedFlow<String>()
-    val incomingMessages: SharedFlow<String> = _incomingMessages
-
-
     private var serverSocket: BluetoothServerSocket? = null
     private var clientSocket: BluetoothSocket? = null
     private var writer: OutputStream? = null
@@ -88,16 +76,23 @@ class BluetoothHelper @Inject constructor(
         get() =
             _isConnected.asStateFlow()
 
-    private val foundDeviceReceiver: FoundDeviceReceiver? = FoundDeviceReceiver { device ->
-        _scannedDevices.update { devices ->
-            // dont add the device if it is already in the list or if it is bonded.
-            if (shouldAddDevice(device, devices)) {
-                devices + device
-            } else {
-                devices
+
+    // device broadcast receiver
+    private val foundDeviceReceiver: FoundDeviceReceiver? = FoundDeviceReceiver(
+        onDeviceFound = { device ->
+            _scannedDevices.update { devices ->
+                // dont add the device if it is already in the list or if it is bonded.
+                if (shouldAddDevice(device, devices)) {
+                    devices + device
+                } else {
+                    devices
+                }
             }
+        },
+        onStatusChanged = { status ->
+            _isDiscovering.update { status }
         }
-    }
+    )
 
     fun shouldAddDevice(device: BluetoothDevice, currentList: List<BluetoothDevice>?): Boolean {
         if (currentList?.any { it.address == device.address } == true || device.bondState == BluetoothDevice.BOND_BONDED) {
@@ -181,6 +176,13 @@ class BluetoothHelper @Inject constructor(
         if (hasPermission(Manifest.permission.BLUETOOTH_SCAN) &&
             hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
         ) {
+            Log.d("BluetoothVM", "Ra1 BLUETOOTH_SCAN permission granted")
+
+            val scanFilter = IntentFilter().apply {
+                addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
+                addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            }
+
             // Register receiver dynamically
             val filter = IntentFilter().apply {
                 addAction(BluetoothDevice.ACTION_FOUND)
@@ -195,7 +197,7 @@ class BluetoothHelper @Inject constructor(
             bluetoothAdapter?.startDiscovery()
         } else {
             // Optionally, notify UI that permission is missing
-            Log.d("BluetoothVM", "BLUETOOTH_SCAN permission not granted")
+            Log.d("BluetoothVM", "Ra1 BLUETOOTH_SCAN permission not granted")
         }
     }
 
@@ -203,13 +205,13 @@ class BluetoothHelper @Inject constructor(
         if (hasPermission(Manifest.permission.BLUETOOTH_SCAN)) {
             if (bluetoothAdapter?.isDiscovering == true) {
                 bluetoothAdapter.cancelDiscovery()
+                _isDiscovering.value = false
             }
             runCatching { context.unregisterReceiver(foundDeviceReceiver) }
         } else {
             // Optionally, notify UI that permission is missing
             Log.d("BluetoothVM", "BLUETOOTH_SCAN permission not granted")
         }
-
     }
 
     fun hasPermission(permission: String): Boolean {
@@ -237,13 +239,26 @@ class BluetoothHelper @Inject constructor(
                     null
                 }
                 emit(ConnectionResult.ConnectionEstablished)
-                clientSocket?.let {
+                clientSocket?.let { it ->
                     serverSocket?.close()
+                    val service = BluetoothDataService(it)
+                    bluetoothDataTransferService = service
+
+                    emitAll(service.listenForMessages())
                 }
             }
-        }.onCompletion {
+        }.onCompletion { cause ->
+            if (cause == null) {
+                emit(ConnectionResult.ConnectionLost("Server stopped"))
+            } else {
+                emit(ConnectionResult.Error("Server stopped with error: ${cause.message}"))
+            }
             closeConnection()
         }.flowOn(Dispatchers.IO)
+    }
+
+    override fun stopServer() {
+        closeConnection()
     }
 
     override fun connectDevice(device: BluetoothDevice): Flow<ConnectionResult> {
@@ -267,6 +282,13 @@ class BluetoothHelper @Inject constructor(
                 try {
                     socket.connect()
                     emit(ConnectionResult.ConnectionEstablished)
+
+                    BluetoothDataService(socket).also {
+                        bluetoothDataTransferService = it
+                        emitAll(
+                            it.listenForMessages()
+                        )
+                    }
                 } catch (e: IOException) {
                     socket.close()
                     clientSocket = null
@@ -279,10 +301,19 @@ class BluetoothHelper @Inject constructor(
     }
 
     override fun closeConnection() {
-        serverSocket?.close()
-        clientSocket?.close()
-        serverSocket = null
+        try {
+            clientSocket?.close()
+        } catch (_: Exception) {
+            Log.d("BeChat", "Ra1 close connection exception")
+        }
+        try {
+            serverSocket?.close()
+        } catch (_: Exception) {
+            Log.d("BeChat", "Ra1 close server socket exception")
+        }
         clientSocket = null
+        serverSocket = null
+        bluetoothDataTransferService = null
     }
 
     override fun release() {
@@ -290,54 +321,42 @@ class BluetoothHelper @Inject constructor(
         context.unregisterReceiver(connectionStateReceiver)
         closeConnection()
     }
-//
-//    // 🔹 Start as Server (Host)
-//    suspend fun startServer() {
-//        try {
-//            serverSocket = bluetoothAdapter?.listenUsingRfcommWithServiceRecord(APP_NAME, APP_UUID)
-//            val socket = serverSocket?.accept()
-//            socket?.let {
-//                manageConnection(it)
-//            }
-//        } catch (e: IOException) {
-//            Log.e("BLE", "Server error: ${e.message}")
-//        }
-//    }
 
-//    // 🔹 Handle Socket Connection
-//    private suspend fun manageConnection(btSocket: BluetoothSocket) {
-//        socket = btSocket
-//        _connectedDevices.value = listOf(
-//            Device(
-//                name = btSocket.remoteDevice.name ?: "Unknown",
-//                address = btSocket.remoteDevice.address
-//            )
-//        )
-//        writer = btSocket.outputStream
-//
-//        // Listen for incoming messages
-//        val reader = BufferedReader(InputStreamReader(btSocket.inputStream))
-//        try {
-//            val reader = BufferedReader(InputStreamReader(btSocket.inputStream))
-//            var line: String?
-//
-//            while (btSocket.isConnected) {
-//                line = reader.readLine() ?: break
-//                _incomingMessages.emit("Them: $line")
-//            }
-//        } catch (e: IOException) {
-//            Log.e("BLE", "Disconnected: ${e.message}")
-//        }
-//    }
-
-    // 🔹 Send Message
-    fun sendMessage(message: String) {
+    override suspend fun sendMessage(message: String): Message? {
+        var msgStatus: Boolean? = null
         try {
-            writer?.write((message + "\n").toByteArray())
-            writer?.flush()
+            if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
+                Log.d("", "Ra1 No permission")
+                return null
+            }
+
+            if (bluetoothDataTransferService == null) {
+                Log.d("", "Ra1 data transfer service not init")
+                msgStatus = false
+            }
+
+            val messageToSend = Message(
+                message = message,
+                msgId = Random.nextInt(),
+                isSentByUser = true,
+                senderName = bluetoothAdapter?.name ?: "Unknown name"
+            )
+
+            msgStatus = bluetoothDataTransferService?.sendMessage(messageToSend.toByteArray())
+            Log.d("BeChat", "Ra1 controller msg status -> $msgStatus")
+            if (msgStatus == true) {
+                return messageToSend.copy(
+                    status = MessageStatus.SENT
+                )
+            } else {
+                return messageToSend.copy(
+                    status = MessageStatus.FAILED
+                )
+            }
         } catch (e: IOException) {
             Log.e("BLE", "Send failed: ${e.message}")
+            return Message(msgId = 0, message = "Couldn't send message")
         }
+        return null
     }
 }
-

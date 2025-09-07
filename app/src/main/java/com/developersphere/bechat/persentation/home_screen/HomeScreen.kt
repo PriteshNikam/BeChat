@@ -1,21 +1,18 @@
 package com.developersphere.bechat.persentation.home_screen
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
-import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,12 +21,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.developersphere.bechat.persentation.home_screen.widget.HomeScreenTopAppBar
-import com.developersphere.bechat.persentation.home_screen.widget.ListItem
-import com.developersphere.bechat.persentation.home_screen.widget.NoDeviceFound
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.*
+import com.developersphere.bechat.R
+import com.developersphere.bechat.persentation.home_screen.widget.*
 import com.developersphere.bechat.persentation.navigation.Screen
 import com.developersphere.bechat.persentation.shared.SharedViewModel
-import com.developersphere.bechat.ui.theme.BeChatTheme
 
 @Composable
 fun HomeScreen(
@@ -39,11 +36,11 @@ fun HomeScreen(
     val homeScreenUiState = sharedViewModel.bluetoothUiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(true) {
+    // launch effect true/Unit means it is only triggered once.
+    LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    context, Manifest.permission.BLUETOOTH_CONNECT
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 if (homeScreenUiState.value.isBluetoothEnable) {
@@ -56,93 +53,118 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             HomeScreenTopAppBar(
-                scanDevice = {
-                    sharedViewModel.startDiscovering()
+                navigate = { screen ->
+                    navigate(screen)
                 },
-                enableServer = {
-                    sharedViewModel.waitingForIncomingConnection()
-                }
-
-            )
-        }
-    ) { padding ->
+                isDiscovering = homeScreenUiState.value.isDiscovering,
+                isServerEnabled = homeScreenUiState.value.isConnecting,
+                togglerDeviceScan = {
+                    if (homeScreenUiState.value.isBluetoothEnable) {
+                        if (homeScreenUiState.value.isDiscovering)
+                            sharedViewModel.stopDiscovering()
+                        else sharedViewModel.startDiscovering()
+                    }
+                },
+                toggleServer = {
+                    if (homeScreenUiState.value.isConnecting) {
+                        sharedViewModel.stopServer()
+                    } else {
+                        sharedViewModel.waitingForIncomingConnection()
+                    }
+                })
+        }) { padding ->
         when {
             homeScreenUiState.value.isConnecting -> {
-                Box(Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
+                HomeScreenConnectingStateUI()
+            }
+
+            homeScreenUiState.value.isConnected -> {
+                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+                navigate(Screen.ChatScreen)
             }
 
             else -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues = padding)
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    ) {
-                        item {
-                            Text(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                text = "Paired Devices",
-                                style = TextStyle(
-                                    fontSize = 20.sp,
-                                )
-                            )
-                        }
-                        if (homeScreenUiState.value.pairedDevices?.isNotEmpty() == true) {
-                            items(homeScreenUiState.value.pairedDevices!!) { device ->
-                                ListItem(device, connectDevice = {
-                                    sharedViewModel.connectDevice(it)
-                                    //navigate(Screen.ChatScreen)
-                                })
-                            }
-                        } else {
-                            if (!homeScreenUiState.value.isDiscovering) {
-                                item {
-                                    NoDeviceFound()
-                                }
-                            } else {
-                                item {
-                                    Text("Scanning...")
-                                }
-                            }
+                HomeScreenIdelStateUI(
+                    padding = padding,
+                    homeScreenUiState = homeScreenUiState,
+                    onStartDiscovering = { sharedViewModel.startDiscovering() },
+                    onConnectDevice = { device ->
+                        sharedViewModel.connectDevice(device)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@SuppressLint("MissingPermission")
+@Composable
+fun HomeScreenIdelStateUI(
+    padding: PaddingValues,
+    homeScreenUiState: State<HomeScreenUiState>,
+    onStartDiscovering: () -> Unit,
+    onConnectDevice: (BluetoothDevice) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues = padding)
+    ) {
+        LazyColumn(
+            modifier = Modifier.padding(horizontal = 16.dp),
+        ) {
+            item {
+                Text(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    text = "Paired Devices",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                    )
+                )
+            }
+            if (homeScreenUiState.value.pairedDevices?.isNotEmpty() == true) {
+                items(homeScreenUiState.value.pairedDevices!!) { device ->
+                    ListItem(device, connectDevice = {
+                        if (device.bondState != BluetoothDevice.BOND_BONDED || !homeScreenUiState.value.isConnected) {
+                            onStartDiscovering()
                         }
 
-                        item {
-                            Text(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                text = "Available Devices",
-                                style = TextStyle(
-                                    fontSize = 20.sp,
-                                )
-                            )
-                        }
+                        // check this if not required after connecting then remove.
+//                                    if (homeScreenUiState.value.isConnected) {
+//                                        navigate(Screen.ChatScreen)
+//                                    }
+                    })
+                }
+            } else {
+                item {
+                    NoDeviceFound()
+                }
+            }
 
-                        if (homeScreenUiState.value.availableDevices?.isNotEmpty() == true) {
-                            items(homeScreenUiState.value.availableDevices!!) { device ->
-                                ListItem(
-                                    device,
-                                    connectDevice = {
-                                        sharedViewModel.connectDevice(device)
-                                        Log.d("BLE", "Ra1 connected")
-//                                if (connected) {
-//                                    navigate(Screen.ChatScreen)
-//                                }
-                                    }
-                                )
-                            }
-                        } else {
-                            item {
-                                NoDeviceFound()
-                            }
-                            item {
-                                Button(onClick = { sharedViewModel.startDiscovering() }) {
-                                    Text("Scan")
-                                }
-                            }
-                        }
+            item {
+                Text(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    text = "Available Devices",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                    )
+                )
+            }
+
+            if (homeScreenUiState.value.availableDevices?.isNotEmpty() == true) {
+                items(homeScreenUiState.value.availableDevices!!) { device ->
+                    ListItem(
+                        device, connectDevice = {
+                            onConnectDevice(device)
+                        })
+                }
+            } else {
+                item {
+                    NoDeviceFound()
+                }
+                if (homeScreenUiState.value.isDiscovering) {
+                    item {
+                        Text("Scanning...")
                     }
                 }
             }
@@ -150,24 +172,40 @@ fun HomeScreen(
     }
 }
 
-@Preview
+@Composable
+fun HomeScreenConnectingStateUI() {
+    val composition by rememberLottieComposition(
+        spec = LottieCompositionSpec.RawRes(
+            R.raw.loading_lottie
+        )
+    )
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LottieAnimation(
+            modifier = Modifier.height(200.dp),
+            composition = composition,
+            iterations = LottieConstants.IterateForever
+        )
+        Text("Server hosted", style = TextStyle(fontSize = 20.sp))
+    }
+}
+
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun HomeScreenPreviewDark() {
-    BeChatTheme(darkTheme = true) {
-        HomeScreen(
-            {},
-            sharedViewModel = TODO()
-        )
-    }
+    HomeScreen(
+        {}, sharedViewModel = hiltViewModel()
+    )
 }
 
 @Preview
 @Composable
 fun HomeScreenPreview() {
-    BeChatTheme {
-        HomeScreen(
-            {},
-            sharedViewModel = TODO()
-        )
-    }
+    HomeScreen(
+        {}, sharedViewModel = hiltViewModel()
+    )
+
 }

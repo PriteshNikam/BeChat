@@ -1,34 +1,55 @@
 package com.developersphere.bechat.persentation.home_screen.widget
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.developersphere.bechat.R
+import com.developersphere.bechat.persentation.navigation.Screen
+import com.developersphere.bechat.ui.theme.BeChatTheme
 
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenTopAppBar(scanDevice: () -> Unit, enableServer: () -> Unit) {
+fun HomeScreenTopAppBar(
+    isServerEnabled: Boolean,
+    isDiscovering: Boolean,
+    togglerDeviceScan: () -> Unit,
+    toggleServer: () -> Unit,
+    navigate: (Screen) -> Unit,
+) {
     TopAppBar(
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -52,40 +73,90 @@ fun HomeScreenTopAppBar(scanDevice: () -> Unit, enableServer: () -> Unit) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Icon(
-                    imageVector = Icons.Filled.Build,
-                    contentDescription = "",
+                    painter = if (isServerEnabled) painterResource(R.drawable.stop_server)
+                    else
+                        painterResource(R.drawable.server),
+                    contentDescription = "Server",
                     Modifier
                         .size(22.dp)
                         .clickable {
-                            enableServer()
-                        },
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-
-                Icon(
-                    painter = painterResource(id = R.drawable.detect),
-                    contentDescription = "",
-                    Modifier
-                        .size(22.dp)
-                        .clickable {
-                            scanDevice()
+                            toggleServer()
                         },
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.width(12.dp))
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "",
-                    Modifier
-                        .size(22.dp)
+
+                Text(
+                    if (isDiscovering) "Stop" else "Scan",
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier
+                        .width(40.dp)
+                        .align(Alignment.CenterVertically)
                         .clickable {
+                            togglerDeviceScan()
                         },
-                    tint = MaterialTheme.colorScheme.onSurface,
                 )
+                MenuDropDown(navigate)
 
             }
         }
     )
 }
+
+@Composable
+fun MenuDropDown(navigate: (Screen) -> Unit) {
+    Box(
+        modifier = Modifier
+            .padding(all = 0.dp)
+    ) {
+        var expanded by remember { mutableStateOf(false) }
+        IconButton(onClick = { expanded = !expanded }) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = ""
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text(text = "Manual") }, onClick = {
+                expanded = false
+                navigate(Screen.ConnectionGuideScreen)
+            })
+            DropdownMenuItem(text = { Text(text = "about") }, onClick = {
+                expanded = false
+                navigate(Screen.AboutScreen)
+            })
+        }
+    }
+}
+
+@Composable
+@Preview
+fun HomeScreenTopAppBarPreview() {
+    BeChatTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            HomeScreenTopAppBar(true, true, {}, {}) {
+
+            }
+        }
+    }
+}
+
+@Composable
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+fun HomeScreenTopAppBarDarkPreview() {
+    BeChatTheme {
+        HomeScreenTopAppBar(false, false, {}, {}) {
+
+        }
+    }
+}
+
