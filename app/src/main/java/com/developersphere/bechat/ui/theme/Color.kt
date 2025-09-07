@@ -2,7 +2,6 @@ package com.developersphere.bechat.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-
 //custom color
 
 // Primary & Accent
