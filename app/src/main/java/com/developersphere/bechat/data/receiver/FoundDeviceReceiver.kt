@@ -28,12 +28,12 @@ class FoundDeviceReceiver(
             }
 
             BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-                Log.d("BluetoothReceiver", "ACTION_DISCOVERY_STARTED")
+                Log.d("BluetoothReceiver", "Ra1 ACTION_DISCOVERY_STARTED")
                 onStatusChanged(true)
             }
 
             BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                Log.d("BluetoothReceiver", "ACTION_DISCOVERY_FINISHED")
+                Log.d("BluetoothReceiver", "Ra1 ACTION_DISCOVERY_FINISHED")
                 onStatusChanged(false)
             }
 
