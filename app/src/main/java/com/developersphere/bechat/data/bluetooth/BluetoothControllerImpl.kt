@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.ContextCompat
-import com.developersphere.bechat.data.receiver.ScanningStatusReceiver
 import com.developersphere.bechat.data.service.BluetoothDataService
 import com.developersphere.bechat.data.toByteArray
 import com.developersphere.bechat.domain.bluetooth.BluetoothController
@@ -124,11 +123,10 @@ class BluetoothControllerImpl @Inject constructor(
 
     private val connectionStateReceiver: ConnectionStateReceiver? =
         ConnectionStateReceiver { isConnected, device ->
-            if (bluetoothAdapter?.bondedDevices?.contains(device) == true) {
+            if (bluetoothAdapter?.bondedDevices?.contains(device) == true
+                && device.bluetoothClass.majorDeviceClass == BluetoothClass.Device.PHONE_SMART
+            ) {
                 _isConnected.update { isConnected }
-//            _connectedDevices.update { devices ->
-//
-//            }
             } else {
                 CoroutineScope(Dispatchers.IO).launch {
                     _error.emit("Can't connect to a non-paired device.")
