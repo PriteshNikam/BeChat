@@ -59,10 +59,22 @@ Whether you're in a remote area without network coverage or simply want a privat
 ## 📷 Media
 
 ### 📱 Screenshots
-*Screenshots will be added here showcasing the app's interface*
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f9db39a1-9a63-4c6d-bffb-c8ccaa35512f" alt="Permission Screen" width="250"/>
+  <img src="https://github.com/user-attachments/assets/1709ddd8-5f03-4462-9846-c863f86019e2" alt="Home Screen" width="250"/>
+  <img src="https://github.com/user-attachments/assets/3b9de69b-7484-4ce4-a7ba-a2cca7fb2d87" alt="ConnectionState Screen" width="250"/>
+</p>
+
 
 ### 🎥 Demo Video
-*Demo video will be embedded here showing the app in action*
+Device 1 - 
+
+[Watch the demo video](https://github.com/user-attachments/assets/3effb38a-04ec-4669-9ddc-4f00c7bfcd97)
+
+Device 2 - 
+
+[Watch the demo video](https://github.com/user-attachments/assets/f5e0796a-09a7-4d81-9bd0-e99ce1c383bd)
+
 
 ---
 
