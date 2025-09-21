@@ -181,12 +181,8 @@ private fun handleBluetoothSetup(
         return
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (!bluetoothPermissionViewModel.isBluetoothEnabled.value) {
-            enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-        } else {
-            navigate(Screen.HomeScreen)
-        }
+    if (!bluetoothPermissionViewModel.isBluetoothEnabled.value) {
+        enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
     } else {
         navigate(Screen.HomeScreen)
     }
